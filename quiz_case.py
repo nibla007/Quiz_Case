@@ -1,42 +1,39 @@
-import os
-from questions import quiz
+from questions import quizzes
+
+
+def check_answer(user_input, answers):
+    user_choice = answers[user_input - 1]
+    the_correct_answer = "not found"
+    for answer in answers:
+        if answer.get("correct"):
+            the_correct_answer = answer.get("answer")
+
+    if user_choice.get("correct"):
+        return "Correct!\n", 1
+    return f"Wrong! Correct answer is: {the_correct_answer}\n", 0
 
 
 def quiz_program():
     score = 0
-    num_questions = len(quiz)
-    for dictionary in quiz:
-        for question, answer in dictionary.items():
-            print(question)
-            user_answer = input("Enter Answer: ")
-            check = check_answer(answer, user_answer)
-            if check:
-                score += 1
-    return score, num_questions
+    for quiz in quizzes:
+        for question in quiz.get("questions"):
+            prompt = question.get("prompt")
+            question_id = question.get("id")
+            print(f"Question {question_id}. {prompt}")
 
+            for count, answers in enumerate(question.get("answers"), start=1):
+                answer = answers.get("answer")
+                print(f"{count}. {answer}")
+            user_input = int(input("Your answer: "))
+            result, point = check_answer(user_input, question.get("answers"))
+            print(result)
+            score += point
 
-def check_answer(answer, user_answer):
-    if answer.lower().strip() == user_answer.lower().strip():
-        print("Correct!\n")
-        return True
-    else:
-        print(f"Wrong! Correct answer: {answer}\n")
-        return False
-
-
-def intro_message():
-    print("Welcome to my python quiz!\n"
-          "In this quiz you'll answer questions about python and it's syntax\n")
-    user = input("Before we start, what's your name? ")
-    input(f"Good luck {user}!\n"
-          "Press enter to begin the quiz\n")
-    os.system('cls')
+    print(f"\n***RESULTS***\nYou got {score} correct out of {len(quizzes[0].get('questions'))} possible")
 
 
 def main():
-    intro_message()
-    results, total_questions = quiz_program()
-    print(f"You got {results} / {total_questions}")
+    quiz_program()
 
 
 if __name__ == '__main__':
