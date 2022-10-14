@@ -1,4 +1,5 @@
-from questions import quizzes
+import requests
+import random
 
 
 def check_answer(user_input, answers):
@@ -9,27 +10,33 @@ def check_answer(user_input, answers):
             the_correct_answer = answer.get("answer")
 
     if user_choice.get("correct"):
-        return "Correct!\n", 1
-    return f"Wrong! Correct answer is: {the_correct_answer}\n", 0
+        return "Rätt!\n", 1
+    return f"Fel! Rätt svar är: {the_correct_answer}\n", 0
 
 
 def quiz_program():
+    url = "https://bjornkjellgren.se/quiz/v1/questions"
+    r = requests.get(url)
+    r_dict = r.json()
     score = 0
-    for quiz in quizzes:
-        for question in quiz.get("questions"):
-            prompt = question.get("prompt")
-            question_id = question.get("id")
-            print(f"Question {question_id}. {prompt}")
 
-            for count, answers in enumerate(question.get("answers"), start=1):
-                answer = answers.get("answer")
-                print(f"{count}. {answer}")
-            user_input = int(input("Your answer: "))
-            result, point = check_answer(user_input, question.get("answers"))
-            print(result)
-            score += point
+    for question in r_dict["questions"]:
+        question_id = question.get("id")
+        prompt = question.get("prompt")
+        print(f"Fråga {question_id}. {prompt}")
 
-    print(f"\n***RESULTS***\nYou got {score} correct out of {len(quizzes[0].get('questions'))} possible")
+        all_answers = question.get("answers")
+        random.shuffle(all_answers)
+
+        for count, all_answers in enumerate(question.get("answers"), start=1):
+            answer = all_answers.get("answer")
+            print(f"{count}. {answer}")
+        user_input = int(input("Ditt svar: "))
+        result, point = check_answer(user_input, question.get("answers"))
+        print(result)
+        score += point
+
+    print(f"\n***RESULTAT***\nDu fick {score} rätt av {len(r_dict.get('questions'))} möjliga")
 
 
 def main():
