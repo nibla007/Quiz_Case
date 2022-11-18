@@ -1,5 +1,8 @@
 import requests
 import random
+import json
+
+url = "https://bjornkjellgren.se/quiz/v2/questions"
 
 
 def check_answer(user_input, answers):
@@ -12,30 +15,40 @@ def check_answer(user_input, answers):
     the_correct_answers = ' eller '.join(all_answers)
 
     if user_choice.get("correct"):
-        return "Rätt!\n", 1, the_correct_answers
-    return f"Fel! Rätt svar är: {the_correct_answers}\n", 0, the_correct_answers
+        return "Rätt!\n", 1, the_correct_answers, True
+    return f"Fel! Rätt svar är: {the_correct_answers}\n", 0, the_correct_answers, False
 
 
 def save_wrong_answers(f, s):
     return f, s
 
-# fixa svars nummer
+
+def procent(a, b):
+    if b == 0:
+        return 0
+    return 100 * a / b
+
+
+def post_data(i, c):
+    payload = json.dumps({"id": i, "correct": c})
+    requests.post(url, data=payload)
 
 
 def quiz_program():
     wrong_answers = []
-    url = "https://bjornkjellgren.se/quiz/v1/questions"
     r = requests.get(url)
     r_dict = r.json()
     all_questions = r_dict.get("questions")
     random_questions = random.sample(all_questions, k=len(all_questions))[:10]
     score = 0
     user_input = None
+    print(f"Slumpar fram {len(random_questions)} av {len(all_questions)} frågor.\n")
 
     for question_id, question in enumerate(random_questions, start=1):
         prompt = question.get("prompt")
-        print(f"Slumpar fram 10 av {len(all_questions)} frågor.\n")
-        print(f"Fråga {question_id}. {prompt}")
+        times_asked = int(question['times_asked'])
+        times_correct = int(question['times_correct'])
+        print(f"Fråga {question_id}.[{int(procent(times_correct, times_asked))}% har svarat rätt]\n{prompt}")
 
         all_answers = question.get("answers")
         random.shuffle(all_answers)
@@ -53,8 +66,9 @@ def quiz_program():
             else:
                 print(f'\nOgiltigt svar, svara med 1 till {len(all_answers)}')
 
-        result, point, correct_answers = check_answer(user_input, all_answers)
-        if point == 0:
+        result, point, correct_answers, correct_bool = check_answer(user_input, all_answers)
+        post_data(question.get("id"), correct_bool)
+        if not correct_bool:
             wrong_answers.append(save_wrong_answers(prompt, correct_answers))
         print(result)
         score += point
